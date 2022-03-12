@@ -1,0 +1,46 @@
+version: '3'
+services:
+
+  reverse-proxy:
+    container_name: reverse-proxy
+    image: acsdatasystems/sechttpd:latest
+    environment:
+      - TZ=Europe/Rome
+    volumes:
+      - /opt/webserver/reverse-proxy/config/conf.d/:/etc/apache2/conf.d/:rw
+      - /opt/webserver/reverse-proxy/config/ssl/:/etc/apache2/ssl/:ro
+      - /opt/webserver/reverse-proxy/logs/:/var/log/apache/:rw
+    ports:
+      - 80:80/tcp
+      - 443:443/tcp
+      - 8080:8080/tcp     
+    networks:
+      websvc-cluster:
+        ipv4_address: 192.168.99.66
+    restart: always
+    depends_on:
+      - websvc-node1
+
+  websvc-node1:
+    container_name: websvc-node1
+    image: acsdatasystems/sechttpd:latest
+    environment:
+      - TZ=Europe/Rome
+    volumes:
+      - /opt/webserver/websvc-node1/config/conf.d/:/etc/apache2/conf.d/:rw
+      - /opt/webserver/websvc-node1/data:/opt/websvc-data/:ro
+      - /opt/webserver/websvc-node1/logs/:/var/log/apache/:rw
+    ports:
+      - 8088:80/tcp
+    networks:
+      websvc-cluster:
+        ipv4_address: 192.168.99.67
+    restart: always
+
+networks:
+  websvc-cluster:
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.99.64/29
+          gateway: 192.168.99.65
